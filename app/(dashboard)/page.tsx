@@ -3,16 +3,20 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
-import { ArrowRight, CreditCard, Database, Heart, Users, Sparkles } from 'lucide-react';
+import { ArrowRight, CreditCard, Database, Heart, Users, Sparkles, Calendar, Clock, MapPin } from 'lucide-react';
 import { GoldChart } from '@/components/GoldChart';
 import { SocialContacts } from '@/components/SocialContacts';
 import { GoldPricesHome } from '@/components/GoldPricesHome';
 import { TempleNewsSection } from '@/components/TempleNewsSection';
 import { TempleProjectsSection } from '@/components/TempleProjectsSection';
+import { TempleActivitiesTable } from '@/components/TempleActivitiesTable';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useUser } from '@/lib/auth';
 import { motion } from 'framer-motion';
+import { getUpcomingTempleActivities } from '@/lib/db/temple-activities';
+import { format } from 'date-fns';
+import { th } from 'date-fns/locale';
 
 export default function HomePage() {
   const { user } = useUser();
@@ -26,6 +30,8 @@ export default function HomePage() {
     totalDonationAmount: 0,
     isLoading: true
   });
+  const [upcomingActivities, setUpcomingActivities] = useState<any[]>([]);
+  const [activitiesLoading, setActivitiesLoading] = useState(true);
   
   // Define banner interface
   interface Banner {
@@ -42,11 +48,13 @@ export default function HomePage() {
   // Determine the donation link based on authentication status
   const donationLink = user ? '/dashboard/deposit' : '/sign-in';
 
-  // Fetch total donations, banners, and stats
+  // Fetch total donations, banners, stats, and upcoming activities
   useEffect(() => {
     async function fetchData() {
       setIsLoadingDonations(true);
       setStatsData(prev => ({ ...prev, isLoading: true }));
+      setActivitiesLoading(true);
+      
       try {
         // Fetch donation data for progress bar
         const donationResponse = await fetch('/api/donations/total');
@@ -118,6 +126,22 @@ export default function HomePage() {
         } finally {
           setBannersLoading(false);
         }
+        
+        // Fetch upcoming activities
+        try {
+          const activitiesResult = await getUpcomingTempleActivities(3);
+          if (activitiesResult.error) {
+            console.error('Error fetching activities:', activitiesResult.error);
+            setUpcomingActivities([]);
+          } else {
+            setUpcomingActivities(activitiesResult.activitiesList || []);
+          }
+        } catch (error) {
+          console.error('Error fetching activities:', error);
+          setUpcomingActivities([]);
+        } finally {
+          setActivitiesLoading(false);
+        }
       } catch (error) {
         console.error('Error fetching data:', error);
         // Set fallback values if API fails
@@ -128,6 +152,7 @@ export default function HomePage() {
           totalDonationAmount: 10000000,
           isLoading: false
         });
+        setUpcomingActivities([]);
       } finally {
         setIsLoadingDonations(false);
       }
@@ -414,136 +439,157 @@ export default function HomePage() {
 
       <TempleProjectsSection />
       
-      <section className="py-20 bg-gradient-to-b from-white to-teal-50 dark:from-[#151515] dark:to-[#1a1a1a]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <motion.div 
-              className="inline-flex items-center px-4 py-1.5 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300 mb-4"
-              initial={{ opacity: 0, y: -10 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
-            >
-              <span className="flex h-2 w-2 rounded-full bg-indigo-500 mr-2 animate-pulse"></span>
-              รู้จักเรา
-            </motion.div>
-            <motion.h2 
-              className="text-4xl font-bold text-gray-900 dark:text-[#E0E0E0] mb-2 relative inline-block"
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.7, delay: 0.2 }}
-            >
-              เกี่ยวกับมูลนิธิ
-              <motion.span 
-                className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-24 h-1 bg-gradient-to-r from-teal-400 via-amber-500 to-indigo-500 rounded-full"
-                initial={{ width: 0 }}
-                whileInView={{ width: "6rem" }}
+      {/* Temple Activities Table Section */}
+      <TempleActivitiesTable />
+      
+      {/* Upcoming Activities Section */}
+      {upcomingActivities.length > 0 && (
+        <section className="py-20 bg-gradient-to-b from-white to-amber-50 dark:from-[#1a1a1a] dark:to-[#151515]">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <motion.div 
+                className="inline-flex items-center px-4 py-1.5 rounded-full text-sm font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 mb-4"
+                initial={{ opacity: 0, y: -10 }}
+                whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.7, delay: 0.5 }}
-              ></motion.span>
-            </motion.h2>
-            <motion.p 
-              className="text-gray-600 dark:text-gray-400 mt-4 max-w-2xl mx-auto"
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.7, delay: 0.3 }}
-            >
-              ข้อมูลทั่วไปเกี่ยวกับมูลนิธิและการให้บริการ
-            </motion.p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* ประวัติความเป็นมา */}
-            <motion.div 
-              className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm p-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-teal-100 dark:border-teal-900/30 group"
-              initial={{ opacity: 0, x: -30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.7 }}
-            >
-              <div className="flex items-center mb-6">
-                <div className="flex-shrink-0 w-16 h-16 bg-gradient-to-br from-teal-400 via-amber-400 to-indigo-400 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                  <Sparkles className="h-8 w-8 text-white" />
+                transition={{ duration: 0.5 }}
+              >
+                <span className="flex h-2 w-2 rounded-full bg-amber-500 mr-2 animate-pulse"></span>
+                กิจกรรมที่กำลังจะมาถึง
+              </motion.div>
+              <motion.h2 
+                className="text-4xl font-bold text-gray-900 dark:text-[#E0E0E0] mb-2 relative inline-block"
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.7, delay: 0.2 }}
+              >
+                กิจกรรมมูลนิธิ
+                <motion.span 
+                  className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-24 h-1 bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 rounded-full"
+                  initial={{ width: 0 }}
+                  whileInView={{ width: "6rem" }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.7, delay: 0.5 }}
+                ></motion.span>
+              </motion.h2>
+              <motion.p 
+                className="text-gray-600 dark:text-gray-400 mt-4 max-w-2xl mx-auto"
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.7, delay: 0.3 }}
+              >
+                กิจกรรมที่น่าสนใจที่กำลังจะเกิดขึ้นในเร็วๆ นี้
+              </motion.p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {activitiesLoading ? (
+                Array(3).fill(0).map((_, index) => (
+                  <div key={index} className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl shadow-lg border border-amber-100 dark:border-amber-900/30 overflow-hidden animate-pulse">
+                    <div className="h-48 bg-amber-100/50 dark:bg-amber-900/20"></div>
+                    <div className="p-6">
+                      <div className="h-6 bg-amber-100/50 dark:bg-amber-900/20 rounded-full w-3/4 mb-4"></div>
+                      <div className="h-4 bg-amber-100/50 dark:bg-amber-900/20 rounded-full w-full mb-2"></div>
+                      <div className="h-4 bg-amber-100/50 dark:bg-amber-900/20 rounded-full w-2/3 mb-4"></div>
+                      <div className="space-y-2">
+                        <div className="h-4 bg-amber-100/50 dark:bg-amber-900/20 rounded-full w-1/2"></div>
+                        <div className="h-4 bg-amber-100/50 dark:bg-amber-900/20 rounded-full w-3/4"></div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : upcomingActivities.length > 0 ? (
+                upcomingActivities.map((activity) => (
+                  <motion.div 
+                    key={activity.id}
+                    className="group bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl shadow-lg border border-amber-100 dark:border-amber-900/30 overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    {activity.thumbnail_url ? (
+                      <div className="relative h-48 w-full overflow-hidden">
+                        <Image
+                          src={activity.thumbnail_url}
+                          alt={activity.title}
+                          fill
+                          className="object-cover transition-transform duration-500 group-hover:scale-105"
+                          sizes="(max-width: 768px) 100vw, 33vw"
+                        />
+                      </div>
+                    ) : (
+                      <div className="h-48 bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/30 dark:to-orange-900/30 flex items-center justify-center">
+                        <Calendar className="h-12 w-12 text-amber-600 dark:text-amber-400" />
+                      </div>
+                    )}
+                    <div className="p-6">
+                      <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2 line-clamp-1 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors duration-300">
+                        {activity.title}
+                      </h3>
+                      <p className="text-gray-600 dark:text-gray-300 mb-4 text-sm line-clamp-2">
+                        {activity.description || activity.content.replace(/<[^>]*>/g, '').substring(0, 100)}...
+                      </p>
+                      
+                      <div className="space-y-2 mb-4">
+                        <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
+                          <Calendar className="h-4 w-4 mr-2 flex-shrink-0 text-amber-500" />
+                          <span>
+                            {format(new Date(activity.start_date_time), 'dd MMMM yyyy', { locale: th })}
+                          </span>
+                        </div>
+                        <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
+                          <Clock className="h-4 w-4 mr-2 flex-shrink-0 text-amber-500" />
+                          <span>
+                            {format(new Date(activity.start_date_time), 'HH:mm', { locale: th })}
+                          </span>
+                        </div>
+                        {activity.location && (
+                          <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
+                            <MapPin className="h-4 w-4 mr-2 flex-shrink-0 text-amber-500" />
+                            <span className="truncate">{activity.location}</span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <Button 
+                        asChild
+                        className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
+                      >
+                        <Link href={`/activities/${activity.id}`}>
+                          ดูรายละเอียด
+                          <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                        </Link>
+                      </Button>
+                    </div>
+                  </motion.div>
+                ))
+              ) : (
+                <div className="col-span-3 text-center py-8">
+                  <p className="text-gray-500 dark:text-gray-400">ไม่มีกิจกรรมที่กำลังจะมาถึงในขณะนี้</p>
                 </div>
-                <h3 className="ml-4 text-2xl font-bold text-gray-900 dark:text-gray-100 group-hover:translate-x-1 transition-transform duration-300">ประวัติมูลนิธิเพื่อผู้พิการไทย</h3>
+              )}
+            </div>
+            
+            {upcomingActivities.length > 0 && (
+              <div className="mt-12 text-center">
+                <Button 
+                  asChild
+                  variant="outline" 
+                  className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-900/20"
+                >
+                  <Link href="/activities">
+                    ดูกิจกรรมทั้งหมด
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
               </div>
-              
-              <div className="bg-teal-50 dark:bg-teal-900/10 p-5 rounded-lg border border-teal-100 dark:border-teal-900/30">
-                <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">"พลังแห่งความเท่าเทียม เพื่อชีวิตที่ดีกว่าของสตรีพิการไทย"</h4>
-                <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-3">
-                  มูลนิธิเพื่อผู้พิการไทย ก่อตั้งขึ้นเมื่อวันที่ 25 พฤษภาคม พ.ศ. 2553 ณ ที่ตั้งเลขที่ 219/9 หมู่ 3 ตำบลบางพูด อำเภอปากเกล็ด จังหวัดนนทบุรี ด้วยความมุ่งมั่นของสองผู้นำผู้เปี่ยมวิสัยทัศน์ คือ ท่านสุทิน จันทา และท่านอรอนงค์ หอมนาน ประธานกลุ่มก้าวหน้าค้าสลาก ที่เล็งเห็นถึงความเหลื่อมล้ำทางโอกาสและคุณภาพชีวิตของ "สตรีพิการไทย" ที่ยังไม่ได้รับการพัฒนาและสนับสนุนอย่างเท่าเทียม
-                </p>
-                <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-3">
-                  จากจุดเริ่มต้นเล็กๆ ของความตั้งใจและหัวใจแห่งการอุทิศเพื่อสังคม มูลนิธิจึงถือกำเนิดขึ้นเพื่อเป็นที่พึ่ง ที่ยืน และที่สร้างโอกาสใหม่ๆ ให้กับสตรีพิการไทย โดยมี วัตถุประสงค์หลัก 7 ประการ ดังนี้:
-                </p>
-                <ul className="list-disc pl-5 space-y-1 text-gray-700 dark:text-gray-300 mb-3">
-                  <li>เพื่อพัฒนาคุณภาพชีวิตของสตรีคนพิการไทย</li>
-                  <li>เพื่อต่อสู้และเรียกร้องสิทธิและโอกาสที่เท่าเทียมของสตรีพิการไทย</li>
-                  <li>เพื่อสนับสนุนการศึกษาและอาชีพของสตรีผู้พิการ</li>
-                  <li>เพื่อส่งเสริมประเพณีและวัฒนธรรมอันดีงาม</li>
-                  <li>เพื่อสนับสนุนให้สตรีพิการมีโอกาสประกอบอาชีพเป็นผู้แทนจำหน่ายสลากกินแบ่งรัฐบาล</li>
-                  <li>เพื่อดำเนินกิจกรรมเพื่อสาธารณประโยชน์ หรือร่วมมือกับองค์กรการกุศลอื่นๆ</li>
-                  <li>โดยไม่มีการเกี่ยวข้องกับการเมือง</li>
-                </ul>
-              </div>
-            </motion.div>
-
-            {/* คณะกรรมการ */}
-            <motion.div 
-              className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm p-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-indigo-100 dark:border-indigo-900/30 group"
-              initial={{ opacity: 0, x: 30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.7, delay: 0.2 }}
-            >
-              <div className="flex items-center mb-6">
-                <div className="flex-shrink-0 w-16 h-16 bg-gradient-to-br from-indigo-400 via-teal-400 to-amber-400 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                  <Users className="h-8 w-8 text-white" />
-                </div>
-                <h3 className="ml-4 text-2xl font-bold text-gray-900 dark:text-gray-100 group-hover:translate-x-1 transition-transform duration-300">คณะกรรมการมูลนิธิ</h3>
-              </div>
-              
-              <div className="bg-indigo-50 dark:bg-indigo-900/10 p-5 rounded-lg border border-indigo-100 dark:border-indigo-900/30">
-                <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-3">
-                  คณะกรรมการชุดก่อตั้งซึ่งเป็นกำลังหลักของมูลนิธิ ประกอบด้วยบุคคลผู้เสียสละและมุ่งมั่นในการพัฒนาสังคม ดังนี้:
-                </p>
-                <ul className="space-y-2 text-gray-700 dark:text-gray-300">
-                  <li className="flex items-center">
-                    <span className="w-3 h-3 bg-indigo-500 rounded-full mr-2"></span>
-                    <span className="font-medium">นายสงกรานต์ เวียงทอง</span> — ประธานกรรมการ
-                  </li>
-                  <li className="flex items-center">
-                    <span className="w-3 h-3 bg-indigo-500 rounded-full mr-2"></span>
-                    <span className="font-medium">นายวีรยุทธ แก้ววิเศษ</span> — รองประธาน
-                  </li>
-                  <li className="flex items-center">
-                    <span className="w-3 h-3 bg-indigo-500 rounded-full mr-2"></span>
-                    <span className="font-medium">นางจันทร์ฉาย ศักดารักษ์</span> — กรรมการ
-                  </li>
-                  <li className="flex items-center">
-                    <span className="w-3 h-3 bg-indigo-500 rounded-full mr-2"></span>
-                    <span className="font-medium">นางสาวบุษรา ชูบุตร</span> — กรรมการ
-                  </li>
-                  <li className="flex items-center">
-                    <span className="w-3 h-3 bg-indigo-500 rounded-full mr-2"></span>
-                    <span className="font-medium">นางสาวจำเริญ ศักดารักษ์</span> — กรรมการ
-                  </li>
-                  <li className="flex items-center">
-                    <span className="w-3 h-3 bg-indigo-500 rounded-full mr-2"></span>
-                    <span className="font-medium">นายรัตนโชติ ศักดารักษ์</span> — กรรมการและเหรัญญิก
-                  </li>
-                  <li className="flex items-center">
-                    <span className="w-3 h-3 bg-indigo-500 rounded-full mr-2"></span>
-                    <span className="font-medium">นางสุพรรณี วงศาโรจน์</span> — กรรมการและเลขานุการ
-                  </li>
-                </ul>
-              </div>
-            </motion.div>
+            )}
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Temple News Section */}
       <TempleNewsSection />

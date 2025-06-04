@@ -529,6 +529,40 @@ export const templeProjects = pgTable("temple_projects", {
 	updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+// Temple Activities table for storing temple activities/events
+export const templeActivities = pgTable("temple_activities", {
+	id: serial("id").primaryKey(),
+	title: varchar("title", { length: 255 }).notNull(),
+	description: text("description"),
+	content: text("content").notNull(),
+	location: text("location"),
+	startDateTime: timestamp("start_date_time").notNull(),
+	endDateTime: timestamp("end_date_time").notNull(),
+	thumbnailUrl: text("thumbnail_url"),
+	maxParticipants: integer("max_participants"),
+	currentParticipants: integer("current_participants").default(0),
+	isActive: boolean("is_active").notNull().default(true),
+	createdBy: integer("created_by")
+		.notNull()
+		.references(() => users.id),
+	createdAt: timestamp("created_at").notNull().defaultNow(),
+	updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Activity Participants table for tracking who registered for which activity
+export const activityParticipants = pgTable("activity_participants", {
+	id: serial("id").primaryKey(),
+	activityId: integer("activity_id")
+		.notNull()
+		.references(() => templeActivities.id),
+	userId: integer("user_id")
+		.notNull()
+		.references(() => users.id),
+	registeredAt: timestamp("registered_at").notNull().defaultNow(),
+	status: varchar("status", { length: 20 }).notNull().default("registered"), // registered, attended, cancelled
+	notes: text("notes"),
+});
+
 export const templeNewsRelations = relations(templeNews, ({ one }) => ({
 	author: one(users, {
 		fields: [templeNews.createdBy],
@@ -543,6 +577,25 @@ export const templeProjectsRelations = relations(templeProjects, ({ one }) => ({
 	}),
 }));
 
+export const templeActivitiesRelations = relations(templeActivities, ({ one, many }) => ({
+	author: one(users, {
+		fields: [templeActivities.createdBy],
+		references: [users.id],
+	}),
+	participants: many(activityParticipants),
+}));
+
+export const activityParticipantsRelations = relations(activityParticipants, ({ one }) => ({
+	activity: one(templeActivities, {
+		fields: [activityParticipants.activityId],
+		references: [templeActivities.id],
+	}),
+	user: one(users, {
+		fields: [activityParticipants.userId],
+		references: [users.id],
+	}),
+}));
+
 export type ProductSetting = InferSelectModel<typeof productSettings>;
 export type NewProductSetting = Omit<ProductSetting, "id">;
 
@@ -551,6 +604,12 @@ export type NewTempleNews = Omit<TempleNews, "id" | "createdAt" | "updatedAt">;
 
 export type TempleProject = InferSelectModel<typeof templeProjects>;
 export type NewTempleProject = Omit<TempleProject, "id" | "createdAt" | "updatedAt">;
+
+export type TempleActivity = InferSelectModel<typeof templeActivities>;
+export type NewTempleActivity = Omit<TempleActivity, "id" | "createdAt" | "updatedAt">;
+
+export type ActivityParticipant = InferSelectModel<typeof activityParticipants>;
+export type NewActivityParticipant = Omit<ActivityParticipant, "id" | "registeredAt">;
 
 export type Banner = InferSelectModel<typeof banners>;
 export type NewBanner = Omit<Banner, "id" | "createdAt" | "updatedAt">;

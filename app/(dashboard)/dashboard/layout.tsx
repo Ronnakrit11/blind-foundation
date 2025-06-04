@@ -7,7 +7,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Users, Settings, Shield, Activity, Menu, UserCircle, Coins, Wallet, BarChart2, FileText, Globe, LogOut, ClipboardList, History, Key, CreditCard, BanknoteIcon, Moon, Sun, Package, PiggyBank, ShoppingBag, Newspaper, User, Image as ImageIcon } from 'lucide-react';
+import { Users, Settings, Shield, Activity, Menu, UserCircle, Coins, Wallet, BarChart2, FileText, Globe, LogOut, ClipboardList, History, Key, CreditCard, BanknoteIcon, Moon, Sun, Package, PiggyBank, ShoppingBag, Newspaper, User, Image as ImageIcon, Calendar } from 'lucide-react';
 import { useUser } from '@/lib/auth';
 import { SocialContacts } from '@/components/SocialContacts';
 import { useTheme } from '@/lib/theme-provider';
@@ -65,33 +65,20 @@ export default function DashboardLayout({
     const isAdmin = user?.role === 'admin';
     
     const baseItems = [
-
-      
-
       { href: '/dashboard/deposit', icon: Wallet, label: 'บริจาค' },
       { href: '/dashboard/merit-certificate', icon: FileText, label: 'ใบอนุโมทนาบุญ' },
-
-
       { href: '/dashboard/security', icon: Shield, label: 'เปลี่ยนรหัสผ่าน' },
       { href: '/dashboard/2fa', icon: Key, label: 'ตั้งค่า 2FA' },
       { href: '/dashboard/activity', icon: Activity, label: 'Activity' },
     ];
 
     const adminItems = [
-
-
-
       { href: '/dashboard/management/banners', icon: ImageIcon, label: 'จัดการแบนเนอร์' },
       { href: '/dashboard/temple-news', icon: Newspaper, label: 'ข่าวมูลนิธิ' }, 
       { href: '/dashboard/temple-projects', icon: Coins, label: 'โครงการมูลนิธิ' },
+      { href: '/dashboard/temple-activities', icon: Calendar, label: 'กิจกรรมมูลนิธิ' },
       { href: '/dashboard/donations', icon: BanknoteIcon, label: 'รายการบริจาค' }, 
-
-
       { href: '/dashboard/customers', icon: UserCircle, label: 'สมาชิกทั้งหมด' },
-
-
-
-
       { href: '/dashboard/website-settings', icon: Globe, label: 'จัดการเว็บไซต์' },
       { href: '/dashboard/admin', icon: Shield, label: 'จัดการเเอดมิน' },
     ];
