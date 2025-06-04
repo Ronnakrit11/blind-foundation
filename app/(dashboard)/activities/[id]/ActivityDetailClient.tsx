@@ -42,10 +42,10 @@ export default function ActivityDetailClient({ initialActivity }: ActivityDetail
       <Button
         variant="ghost"
         className="mb-4"
-        onClick={() => router.back()}
+        onClick={() => router.push('/')}
       >
         <ArrowLeft className="mr-2 h-4 w-4" />
-        ย้อนกลับ
+        กลับไปหน้าแรก
       </Button>
 
       <div className="bg-white rounded-lg shadow-lg p-6">
