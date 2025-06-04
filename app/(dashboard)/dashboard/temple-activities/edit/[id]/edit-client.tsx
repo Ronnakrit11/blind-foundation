@@ -299,7 +299,7 @@ export default function EditTempleActivityClient({ id }: { id: string }) {
               <Switch
                 id="isActive"
                 checked={isActive}
-                onCheckedChange={setIsActive}
+                onChange={(e) => setIsActive(e.target.checked)}
               />
               <Label htmlFor="isActive">เปิดรับสมัคร</Label>
             </div>

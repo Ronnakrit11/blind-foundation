@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { getTempleActivityById, getActivityParticipants } from '../../actions';
 import { useUser } from '@/lib/auth';
@@ -10,14 +10,17 @@ import { format } from 'date-fns';
 import { th } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 
-export default function ActivityParticipantsPage({ params }: { params: { id: string } }) {
+export default function ActivityParticipantsPage() {
   const [activity, setActivity] = useState<any>(null);
   const [participants, setParticipants] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const params = useParams();
   const { user } = useUser();
-  const activityId = parseInt(params.id);
+  
+  // Get the id from params using useParams hook
+  const activityId = parseInt(params.id as string);
 
   useEffect(() => {
     async function fetchData() {
@@ -49,7 +52,9 @@ export default function ActivityParticipantsPage({ params }: { params: { id: str
       }
     }
 
-    fetchData();
+    if (activityId) {
+      fetchData();
+    }
   }, [activityId]);
 
   const exportToCSV = () => {

@@ -39,7 +39,22 @@ export default function ActivitiesPage() {
           console.error('Error loading activities:', error);
           setActivities([]);
         } else {
-          setActivities(activitiesList || []);
+          // Transform the raw database rows to match the TempleActivity interface
+          const transformedActivities = activitiesList ? activitiesList.map(row => ({
+            id: row.id,
+            title: row.title,
+            description: row.description,
+            content: row.content,
+            location: row.location,
+            start_date_time: row.start_date_time,
+            end_date_time: row.end_date_time,
+            thumbnail_url: row.thumbnail_url,
+            max_participants: row.max_participants,
+            current_participants: row.current_participants || 0,
+            is_active: row.is_active
+          })) : [];
+          
+          setActivities(transformedActivities);
         }
       } catch (error) {
         console.error('Error loading activities:', error);
