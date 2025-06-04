@@ -171,12 +171,16 @@ export function TempleActivitiesTable() {
                           variant="ghost" 
                           size="sm" 
                           className="text-amber-600 hover:text-amber-800 hover:bg-amber-50 dark:text-amber-400 dark:hover:text-amber-300 dark:hover:bg-amber-900/20"
-                          onClick={() => window.open(`/dashboard/temple-activities`, '_blank')}
+                          asChild
                         >
-                          <span className="flex items-center">
-                            รายละเอียด
-                            <ArrowRight className="ml-1 h-4 w-4" />
-                          </span>
+                          <Link href={`/activities/${activity.id}`} prefetch={false} legacyBehavior passHref>
+                            <a target="_blank" rel="noopener noreferrer">
+                              <span className="flex items-center">
+                                รายละเอียด
+                                <ArrowRight className="ml-1 h-4 w-4" />
+                              </span>
+                            </a>
+                          </Link>
                         </Button>
                       </td>
                     </tr>
@@ -191,12 +195,16 @@ export function TempleActivitiesTable() {
           <Button 
             variant="outline" 
             className="border-amber-200 text-amber-700 hover:bg-amber-50 dark:border-amber-800 dark:text-amber-400 dark:hover:bg-amber-900/20"
-            onClick={() => window.open('/dashboard/temple-activities', '_blank')}
+            asChild
           >
-            <span className="flex items-center">
-              ดูกิจกรรมทั้งหมด
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </span>
+            <Link href="/activities" prefetch={false} legacyBehavior passHref>
+              <a target="_blank" rel="noopener noreferrer">
+                <span className="flex items-center">
+                  ดูกิจกรรมทั้งหมด
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </span>
+              </a>
+            </Link>
           </Button>
         </div>
       </div>
