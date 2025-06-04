@@ -28,8 +28,8 @@ export async function getUpcomingTempleActivities(limit: number = 5) {
     // Import the client from drizzle.ts
     const { client } = await import('./drizzle');
     
-    // Get current date
-    const now = new Date();
+    // Get current date and convert to ISO string for SQL compatibility
+    const now = new Date().toISOString();
     
     // Use the postgres client to get upcoming activities
     const activitiesList = await client`
@@ -185,6 +185,10 @@ export async function updateTempleActivity({
     
     const existingActivity = existingActivityItems[0];
     
+    // Convert Date objects to ISO strings for SQL compatibility
+    const startDateTimeStr = startDateTime ? startDateTime.toISOString() : existingActivity.start_date_time;
+    const endDateTimeStr = endDateTime ? endDateTime.toISOString() : existingActivity.end_date_time;
+    
     // Update the activity item with the correct column names
     const updateResult = await client`
       UPDATE temple_activities
@@ -192,8 +196,8 @@ export async function updateTempleActivity({
           description = ${description || existingActivity.description},
           content = ${content},
           location = ${location || existingActivity.location},
-          start_date_time = ${startDateTime || existingActivity.start_date_time},
-          end_date_time = ${endDateTime || existingActivity.end_date_time},
+          start_date_time = ${startDateTimeStr},
+          end_date_time = ${endDateTimeStr},
           thumbnail_url = ${thumbnailUrl !== undefined ? thumbnailUrl : existingActivity.thumbnail_url},
           max_participants = ${maxParticipants !== undefined ? maxParticipants : existingActivity.max_participants},
           is_active = ${isActive !== undefined ? isActive : existingActivity.is_active},

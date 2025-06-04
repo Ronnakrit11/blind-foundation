@@ -1,124 +1,67 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { th } from 'date-fns/locale';
-import { Calendar, Clock, MapPin, Users, ArrowLeft, Check } from 'lucide-react';
+import { Calendar, Clock, MapPin, Users, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { getTempleActivityById, registerForActivity, cancelRegistration, getUserActivities } from '@/lib/db/temple-activities';
+import { getTempleActivityById } from '@/lib/db/temple-activities';
 import { useUser } from '@/lib/auth';
 import { toast } from 'sonner';
 
-export default function ActivityDetailPage({ params }: { params?: { id?: string } }) {
+export default function ActivityDetailPage({ params }: { params: { id: string } }) {
   const [activity, setActivity] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isRegistered, setIsRegistered] = useState(false);
-  const [isRegistering, setIsRegistering] = useState(false);
-  const [isCancelling, setIsCancelling] = useState(false);
   const router = useRouter();
   const { user } = useUser();
   // Safely parse the ID with fallback to avoid NaN errors
-  const activityId = params?.id ? parseInt(params.id, 10) || 0 : 0;
+  const activityId = parseInt(params.id, 10) || 0;
 
   useEffect(() => {
+    let isMounted = true;
+    
     async function fetchActivity() {
+      if (!activityId) return;
+      
       try {
         setLoading(true);
         const result = await getTempleActivityById(activityId);
+        
+        if (!isMounted) return;
         
         if (result.error) {
           setError(result.error);
         } else if (result.activity) {
           setActivity(result.activity);
-          
-          // Check if user is registered for this activity
-          if (user) {
-            const userActivitiesResult = await getUserActivities(user.id);
-            if (userActivitiesResult.activities) {
-              const isUserRegistered = userActivitiesResult.activities.some(
-                (a: any) => a.id === activityId && a.registration_status !== 'cancelled'
-              );
-              setIsRegistered(isUserRegistered);
-            }
-          }
         } else {
           setError('ไม่พบข้อมูลกิจกรรม');
         }
       } catch (err) {
-        setError('Failed to load activity');
-        console.error(err);
+        if (isMounted) {
+          setError('Failed to load activity');
+          console.error(err);
+        }
       } finally {
-        setLoading(false);
-      }
-    }
-
-    if (activityId) {
-      fetchActivity();
-    }
-  }, [activityId, user]);
-
-  const handleRegister = async () => {
-    if (!user) {
-      router.push('/sign-in');
-      return;
-    }
-    
-    setIsRegistering(true);
-    try {
-      const result = await registerForActivity(activityId, user.id);
-      
-      if (result.error) {
-        toast.error(result.error);
-      } else {
-        setIsRegistered(true);
-        toast.success('ลงทะเบียนเข้าร่วมกิจกรรมสำเร็จ');
-        
-        // Refresh activity data to get updated participant count
-        const updatedActivity = await getTempleActivityById(activityId);
-        if (updatedActivity.activity) {
-          setActivity(updatedActivity.activity);
+        if (isMounted) {
+          setLoading(false);
         }
       }
-    } catch (error) {
-      toast.error('เกิดข้อผิดพลาดในการลงทะเบียน');
-      console.error(error);
-    } finally {
-      setIsRegistering(false);
     }
-  };
 
-  const handleCancelRegistration = async () => {
-    if (!user) return;
+    fetchActivity();
     
-    setIsCancelling(true);
-    try {
-      const result = await cancelRegistration(activityId, user.id);
-      
-      if (result.error) {
-        toast.error(result.error);
-      } else {
-        setIsRegistered(false);
-        toast.success('ยกเลิกการลงทะเบียนสำเร็จ');
-        
-        // Refresh activity data to get updated participant count
-        const updatedActivity = await getTempleActivityById(activityId);
-        if (updatedActivity.activity) {
-          setActivity(updatedActivity.activity);
-        }
-      }
-    } catch (error) {
-      toast.error('เกิดข้อผิดพลาดในการยกเลิกการลงทะเบียน');
-      console.error(error);
-    } finally {
-      setIsCancelling(false);
-    }
-  };
+    // Cleanup function to prevent state updates if component unmounts
+    return () => {
+      isMounted = false;
+    };
+  }, [activityId]);
 
-  const isActivityFull = activity?.max_participants && activity.current_participants >= activity.max_participants;
+
+
   const isActivityPast = activity && new Date(activity.end_date_time) < new Date();
 
   if (loading) {
@@ -145,11 +88,11 @@ export default function ActivityDetailPage({ params }: { params?: { id?: string 
             {error || 'ไม่พบข้อมูลกิจกรรม'}
           </h1>
           <Link 
-            href="/activities" 
+            href="/" 
             className="inline-flex items-center text-orange-500 hover:text-orange-600"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            กลับไปยังหน้ากิจกรรมทั้งหมด
+            กลับไปยังหน้าเเรก
           </Link>
         </div>
       </div>
@@ -159,11 +102,11 @@ export default function ActivityDetailPage({ params }: { params?: { id?: string 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <Link 
-        href="/activities" 
+        href="/" 
         className="inline-flex items-center text-orange-500 hover:text-orange-600 mb-6"
       >
         <ArrowLeft className="mr-2 h-4 w-4" />
-        กลับไปยังหน้ากิจกรรมทั้งหมด
+        กลับไปยังหน้าเเรก
       </Link>
       
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
@@ -256,38 +199,10 @@ export default function ActivityDetailPage({ params }: { params?: { id?: string 
               <div className="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg text-center">
                 <p className="text-gray-600 dark:text-gray-300">กิจกรรมนี้สิ้นสุดไปแล้ว</p>
               </div>
-            ) : !activity.is_active ? (
+            ) : !activity.is_active && (
               <div className="bg-yellow-100 dark:bg-yellow-900/30 p-4 rounded-lg text-center">
-                <p className="text-yellow-800 dark:text-yellow-300">ปิดรับสมัครแล้ว</p>
+                <p className="text-yellow-800 dark:text-yellow-300">กิจกรรมนี้ถูกปิดให้บริการ</p>
               </div>
-            ) : isRegistered ? (
-              <div className="space-y-4">
-                <div className="bg-green-100 dark:bg-green-900/30 p-4 rounded-lg flex items-center justify-center">
-                  <Check className="h-5 w-5 text-green-600 dark:text-green-400 mr-2" />
-                  <p className="text-green-800 dark:text-green-300">คุณได้ลงทะเบียนเข้าร่วมกิจกรรมนี้แล้ว</p>
-                </div>
-                
-                <Button
-                  variant="outline"
-                  className="w-full text-red-600 border-red-600 hover:bg-red-50 hover:text-red-700"
-                  onClick={handleCancelRegistration}
-                  disabled={isCancelling}
-                >
-                  {isCancelling ? 'กำลังยกเลิก...' : 'ยกเลิกการลงทะเบียน'}
-                </Button>
-              </div>
-            ) : isActivityFull ? (
-              <div className="bg-red-100 dark:bg-red-900/30 p-4 rounded-lg text-center">
-                <p className="text-red-800 dark:text-red-300">กิจกรรมเต็มแล้ว</p>
-              </div>
-            ) : (
-              <Button
-                className="w-full bg-orange-500 hover:bg-orange-600 text-white"
-                onClick={handleRegister}
-                disabled={isRegistering}
-              >
-                {isRegistering ? 'กำลังลงทะเบียน...' : 'ลงทะเบียนเข้าร่วมกิจกรรม'}
-              </Button>
             )}
           </div>
         </div>
